@@ -47,6 +47,8 @@
             border-radius: 8px;
             cursor: grab;
             transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+            user-select: none; /* Metin seçimini engelle */
+            -webkit-user-select: none; /* Safari için */
         }
         
         .puzzle-letter:hover {
@@ -88,9 +90,6 @@
     <canvas id="starfield-canvas"></canvas>
 
     <div id="container" class="relative w-full h-screen flex flex-col items-center justify-center p-4 text-center">
-        <!-- Main content sections, will be managed by JS -->
-        
-        <!-- Welcome Screen -->
         <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center fade-in">
             <h1 class="text-5xl md:text-7xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Büyülü Bir Puzzle</h1>
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Bu kilitli sandığı açmak için doğru harfleri diz.</p>
@@ -99,24 +98,20 @@
             </button>
         </div>
 
-        <!-- Puzzle Screen -->
         <div id="puzzle-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
             <h2 class="text-3xl md:text-5xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Harfleri Birleştir</h2>
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Harfleri doğru sıraya sürükle ve bırak.</p>
             
             <div id="puzzle-area" class="flex flex-col items-center">
                 <div id="puzzle-slots" class="flex space-x-2 mb-8">
-                    <!-- Puzzle slots for the letters will be created by JS -->
-                </div>
+                    </div>
                 <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2">
-                    <!-- Puzzle pieces will be created by JS -->
-                </div>
+                    </div>
             </div>
             
             <p id="puzzle-status" class="text-white/70 italic min-h-[20px] mt-4"></p>
         </div>
         
-        <!-- Final Message Screen -->
         <div id="message-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
             <h2 class="text-3xl md:text-5xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Gizem Çözüldü</h2>
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Bu sihirli yolun sonunda seni bekleyen şey.</p>
@@ -217,9 +212,14 @@
             });
         }
         
-        // Drag and Drop Logic
-        let draggedItem = null;
+        // --- Drag and Drop (Mouse) and Touch Events ---
+        let draggedItem = null; // Mouse
+        let touchedItem = null; // Touch
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let originalParent = null;
 
+        // Mouse Events
         puzzlePiecesContainer.addEventListener('dragstart', (e) => {
             if (!e.target.classList.contains('puzzle-letter')) return;
             draggedItem = e.target;
@@ -236,7 +236,7 @@
         });
 
         puzzleSlots.addEventListener('dragover', (e) => {
-            e.preventDefault(); // This is crucial to allow a drop
+            e.preventDefault();
             if (e.target.classList.contains('puzzle-slot') && !e.target.children.length) {
                 e.target.classList.add('drag-over');
             }
@@ -258,6 +258,78 @@
             }
         });
 
+        // Touch Events
+        puzzlePiecesContainer.addEventListener('touchstart', (e) => {
+            if (!e.target.classList.contains('puzzle-letter')) return;
+            e.preventDefault();
+
+            touchedItem = e.target;
+            originalParent = touchedItem.parentNode;
+            
+            const clonedItem = touchedItem.cloneNode(true);
+            clonedItem.style.position = 'absolute';
+            clonedItem.style.zIndex = '1000';
+            clonedItem.style.opacity = '0.8';
+            document.body.appendChild(clonedItem);
+
+            touchedItem.style.visibility = 'hidden';
+            touchedItem = clonedItem;
+
+            const touch = e.touches[0];
+            touchStartX = touch.clientX - touchedItem.getBoundingClientRect().left;
+            touchStartY = touch.clientY - touchedItem.getBoundingClientRect().top;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!touchedItem) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const x = touch.clientX - touchStartX;
+            const y = touch.clientY - touchStartY;
+            
+            touchedItem.style.left = `${x}px`;
+            touchedItem.style.top = `${y}px`;
+
+            const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+            const slot = elementUnderFinger ? elementUnderFinger.closest('.puzzle-slot') : null;
+            
+            document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('drag-over'));
+            if (slot && !slot.children.length) {
+                slot.classList.add('drag-over');
+            }
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (!touchedItem) return;
+            e.preventDefault();
+
+            const x = e.changedTouches[0].clientX;
+            const y = e.changedTouches[0].clientY;
+            const elementUnderFinger = document.elementFromPoint(x, y);
+            const slot = elementUnderFinger ? elementUnderFinger.closest('.puzzle-slot') : null;
+            
+            if (slot && !slot.children.length) {
+                const originalElement = document.querySelector(`.puzzle-letter[data-letter="${touchedItem.dataset.letter}"][data-original-index="${touchedItem.dataset.originalIndex}"]`);
+                slot.appendChild(originalElement);
+                originalElement.style.visibility = 'visible';
+                originalElement.style.position = '';
+                originalElement.style.left = '';
+                originalElement.style.top = '';
+                checkPuzzle();
+            } else {
+                const originalElement = document.querySelector(`.puzzle-letter[data-letter="${touchedItem.dataset.letter}"][data-original-index="${touchedItem.dataset.originalIndex}"]`);
+                originalParent.appendChild(originalElement);
+                originalElement.style.visibility = 'visible';
+            }
+
+            if (touchedItem.parentNode === document.body) {
+                touchedItem.remove();
+            }
+            touchedItem = null;
+            document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('drag-over'));
+        });
+        
         function checkPuzzle() {
             let userWord = '';
             const filledSlots = puzzleSlots.querySelectorAll('.puzzle-letter');
@@ -315,4 +387,4 @@
     </script>
 </body>
 </html>
-
+                                
