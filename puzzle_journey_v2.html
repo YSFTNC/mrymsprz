@@ -130,6 +130,20 @@
             border-radius: 8px;
             padding: 10px;
         }
+        
+        .section-count {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        .section-count-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            padding: 0 10px;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#0c0a2a] to-[#4b0c7c] text-white flex items-center justify-center min-h-screen">
@@ -150,8 +164,23 @@
         </button>
         
         <div id="counter-content" class="hidden mt-6">
-            <h4 class="text-lg font-bold mb-2">Toplam Ziyaretçi: <span id="visit-count">0</span></h4>
-            <h5 class="text-md font-bold mb-2">Son Ziyaret Kayıtları:</h5>
+            <h4 class="text-lg font-bold mb-4 text-center">Ziyaretçi Sayıları</h4>
+            <div class="section-count">
+                <div class="section-count-item">
+                    <p class="font-bold">Ana Sayfa</p>
+                    <span id="welcome-count" class="text-2xl text-purple-400 font-bold">0</span>
+                </div>
+                <div class="section-count-item">
+                    <p class="font-bold">Bulmaca</p>
+                    <span id="puzzle-count" class="text-2xl text-purple-400 font-bold">0</span>
+                </div>
+                <div class="section-count-item">
+                    <p class="font-bold">Mesaj</p>
+                    <span id="message-count" class="text-2xl text-purple-400 font-bold">0</span>
+                </div>
+            </div>
+            
+            <h5 class="text-md font-bold mt-4 mb-2">Son Ziyaret Kayıtları:</h5>
             <div id="log-display" class="log-list">
                 <!-- Log entries will be added here by JS -->
             </div>
@@ -229,7 +258,9 @@
         const passwordSubmit = document.getElementById('password-submit');
         const passwordStatus = document.getElementById('password-status');
         const counterContent = document.getElementById('counter-content');
-        const visitCountElement = document.getElementById('visit-count');
+        const welcomeCountElement = document.getElementById('welcome-count');
+        const puzzleCountElement = document.getElementById('puzzle-count');
+        const messageCountElement = document.getElementById('message-count');
         const logDisplay = document.getElementById('log-display');
 
         const correctPassword = '4779';
@@ -368,7 +399,10 @@
             if (isCorrect) {
                 puzzleStatus.textContent = "Kilit açıldı! Tebrikler!";
                 puzzleSolved = true;
-                setTimeout(() => showScreen(messageScreen), 2000);
+                setTimeout(() => {
+                    logVisit('message');
+                    showScreen(messageScreen);
+                }, 2000);
             } else {
                 puzzleStatus.textContent = "Harflerin sırası yanlış. Tekrar dene.";
             }
@@ -388,6 +422,7 @@
         }
 
         startBtn.addEventListener('click', () => {
+            logVisit('puzzle');
             showScreen(puzzleScreen);
             puzzleStatus.textContent = "Sırayı doğru tahmin et.";
         });
@@ -403,11 +438,11 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Sign in anonymously and log the visit
+                // Sign in anonymously and log the initial visit
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        await incrementVisitCount();
-                        await logVisit();
+                        // Log visit for the welcome screen
+                        logVisit('welcome');
                     } else {
                         try {
                            if (initialAuthToken) {
@@ -426,11 +461,13 @@
             }
         }
 
-        async function incrementVisitCount() {
+        async function logVisit(page) {
             if (!db) return;
-            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/main_counter`);
+            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/${page}_counter`);
+            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
             
             try {
+                // Increment page counter
                 const docSnap = await getDoc(counterDocRef);
                 if (docSnap.exists()) {
                     await updateDoc(counterDocRef, {
@@ -441,34 +478,34 @@
                         count: 1
                     });
                 }
-            } catch (error) {
-                console.error("Sayaç güncelleme hatası:", error);
-            }
-        }
-        
-        async function logVisit() {
-            if (!db) return;
-            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
-            
-            try {
+                
+                // Add a log entry for the visit
                 await addDoc(logCollectionRef, {
+                    page: page,
                     timestamp: serverTimestamp()
                 });
             } catch (error) {
-                console.error("Ziyaret kaydı ekleme hatası:", error);
+                console.error("Sayaç veya kayıt hatası:", error);
             }
         }
 
         async function updateAndDisplayLogs() {
             if (!db) return;
-            // Get total count
-            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/main_counter`);
-            const countSnap = await getDoc(counterDocRef);
-            if (countSnap.exists()) {
-                visitCountElement.textContent = countSnap.data().count;
-            } else {
-                visitCountElement.textContent = '0';
-            }
+            
+            // Get section counts
+            const welcomeCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/welcome_counter`);
+            const puzzleCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/puzzle_counter`);
+            const messageCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/message_counter`);
+
+            const [welcomeSnap, puzzleSnap, messageSnap] = await Promise.all([
+                getDoc(welcomeCounterRef),
+                getDoc(puzzleCounterRef),
+                getDoc(messageCounterRef)
+            ]);
+            
+            welcomeCountElement.textContent = welcomeSnap.exists() ? welcomeSnap.data().count : '0';
+            puzzleCountElement.textContent = puzzleSnap.exists() ? puzzleSnap.data().count : '0';
+            messageCountElement.textContent = messageSnap.exists() ? messageSnap.data().count : '0';
 
             // Get log records
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
@@ -480,9 +517,11 @@
                 logSnap.forEach((doc) => {
                     const data = doc.data();
                     const timestamp = data.timestamp ? data.timestamp.toDate() : 'Bilinmiyor';
+                    const page = data.page || 'Bilinmiyor';
                     const logEntry = document.createElement('div');
                     logEntry.classList.add('log-entry', 'text-sm');
-                    logEntry.textContent = timestamp.toLocaleString('tr-TR');
+                    const pageName = page === 'welcome' ? 'Ana Sayfa' : (page === 'puzzle' ? 'Bulmaca' : 'Mesaj');
+                    logEntry.textContent = `${pageName} - ${timestamp.toLocaleString('tr-TR')}`;
                     logDisplay.appendChild(logEntry);
                 });
             } else {
