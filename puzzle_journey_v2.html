@@ -79,20 +79,63 @@
             background-color: rgba(240, 171, 252, 0.2);
             box-shadow: 0 0 15px #f0abfc;
         }
-
+        
         #starfield-canvas {
             position: absolute;
             top: 0;
             left: 0;
             z-index: -1;
         }
+
+        /* Sayacı görünmez yapmak için stil. Tıklama alanı korundu. */
+        #counter-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+        
+        #password-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            background-color: rgba(12, 10, 42, 0.9);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid #5b21b6;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            text-align: center;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#0c0a2a] to-[#4b0c7c] text-white flex items-center justify-center min-h-screen">
     <canvas id="starfield-canvas"></canvas>
 
+    <!-- Ziyaretçi Sayacı Toggle -->
+    <div id="counter-toggle">
+        <span id="toggle-text"></span>
+    </div>
+
+    <!-- Şifre Giriş Ekranı -->
+    <div id="password-modal" class="hidden">
+        <h3 class="text-xl font-bold mb-4">Şifre Girin</h3>
+        <input type="password" id="password-input" class="bg-white/10 text-white p-2 rounded-md border border-white/20 mb-2 w-full text-center" placeholder="Şifre...">
+        <p id="password-status" class="text-red-400 text-sm mb-2"></p>
+        <button id="password-submit" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full">
+            Onayla
+        </button>
+    </div>
+
     <div id="container" class="relative w-full h-screen flex flex-col items-center justify-center p-4 text-center">
-        <!-- Ana içerik bölümleri -->
+        <!-- Main content sections -->
         
         <!-- Hoş Geldin Ekranı -->
         <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center fade-in">
@@ -110,7 +153,7 @@
             
             <div id="puzzle-area" class="flex flex-col items-center">
                 <div id="puzzle-slots" class="flex space-x-2 mb-8">
-                    <!-- Puzzle slots for the letters will be created by JS -->
+                    <!-- Puzzle slots will be created by JS -->
                 </div>
                 <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2">
                     <!-- Puzzle pieces will be created by JS -->
@@ -134,7 +177,21 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase ve Firestore Ayarları
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app = null;
+        let db = null;
+        let auth = null;
+
+        // UI Elemanları
         const welcomeScreen = document.getElementById('welcome-screen');
         const startBtn = document.getElementById('start-btn');
         const puzzleScreen = document.getElementById('puzzle-screen');
@@ -142,6 +199,13 @@
         const puzzleSlots = document.getElementById('puzzle-slots');
         const puzzlePiecesContainer = document.getElementById('puzzle-pieces');
         const puzzleStatus = document.getElementById('puzzle-status');
+        const counterToggle = document.getElementById('counter-toggle');
+        const toggleText = document.getElementById('toggle-text');
+        const passwordModal = document.getElementById('password-modal');
+        const passwordInput = document.getElementById('password-input');
+        const passwordSubmit = document.getElementById('password-submit');
+        const passwordStatus = document.getElementById('password-status');
+        const correctPassword = '4779';
 
         // Yıldız tarlası arka planı
         const starfieldCanvas = document.getElementById('starfield-canvas');
@@ -272,7 +336,8 @@
                     puzzleSlots.children[index].classList.remove('correct-slot');
                     isCorrect = false;
                 }
-            });
+            }
+            );
 
             if (isCorrect) {
                 puzzleStatus.textContent = "Kilit açıldı! Tebrikler!";
@@ -300,6 +365,89 @@
             showScreen(puzzleScreen);
             puzzleStatus.textContent = "Sırayı doğru tahmin et.";
         });
+        
+        // --- Firebase Sayaç Fonksiyonları ---
+        async function setupFirebase() {
+            try {
+                if (!firebaseConfig.apiKey) {
+                    console.error('Firebase config not found.');
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Anonim olarak oturum aç ve sayaç işlemini yap
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                         // Kullanıcı başarıyla oturum açtığında sayacı artır ve güncelle
+                        await incrementVisitCount();
+                    } else {
+                        // Eğer oturum açılmamışsa, anonim olarak oturum açmayı dene
+                        try {
+                           if (initialAuthToken) {
+                               await signInWithCustomToken(auth, initialAuthToken);
+                           } else {
+                               await signInAnonymously(auth);
+                           }
+                        } catch (error) {
+                            console.error("Firebase giriş hatası:", error);
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase kurulumu veya giriş hatası:", error);
+            }
+        }
+
+        async function incrementVisitCount() {
+            if (!db) return;
+            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/main_counter`);
+            
+            try {
+                const docSnap = await getDoc(counterDocRef);
+                if (docSnap.exists()) {
+                    await updateDoc(counterDocRef, {
+                        count: increment(1)
+                    });
+                } else {
+                    await setDoc(counterDocRef, {
+                        count: 1
+                    });
+                }
+            } catch (error) {
+                console.error("Sayaç güncelleme hatası:", error);
+            }
+        }
+        
+        async function updateCounterDisplay() {
+            if (!db) return;
+            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/main_counter`);
+            const docSnap = await getDoc(counterDocRef);
+            if (docSnap.exists()) {
+                toggleText.textContent = `Ziyaretçi: ${docSnap.data().count}`;
+            } else {
+                toggleText.textContent = `Ziyaretçi: 0`;
+            }
+        }
+
+        // Sayaç Toggle ve Şifre Kontrolü
+        counterToggle.addEventListener('click', () => {
+            passwordModal.classList.toggle('hidden');
+        });
+
+        passwordSubmit.addEventListener('click', () => {
+            const enteredPassword = passwordInput.value;
+            if (enteredPassword === correctPassword) {
+                passwordModal.classList.add('hidden');
+                passwordStatus.textContent = '';
+                updateCounterDisplay();
+            } else {
+                passwordStatus.textContent = 'Yanlış şifre!';
+                passwordInput.value = '';
+            }
+        });
 
         // Başlangıç ayarları
         window.onload = function() {
@@ -307,6 +455,7 @@
             createStars();
             createPuzzle();
             showScreen(welcomeScreen);
+            setupFirebase();
         };
     </script>
 </body>
