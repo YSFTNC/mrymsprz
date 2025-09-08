@@ -14,7 +14,7 @@
             background-color: #0c0a2a;
         }
 
-        /* Custom CSS for the magical glow */
+        /* Büyülü ışıltı için özel CSS */
         .glowing-text {
             text-shadow: 0 0 5px #a855f7, 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 40px #a855f7;
             animation: glow 1.5s ease-in-out infinite alternate;
@@ -87,7 +87,7 @@
             z-index: -1;
         }
 
-        /* Styling to make the counter toggle invisible */
+        /* Sayaç düğmesinin görünmez olması için stil */
         #counter-toggle {
             position: absolute;
             top: 20px;
@@ -182,13 +182,13 @@
             
             <h5 class="text-md font-bold mt-4 mb-2">Son Ziyaret Kayıtları:</h5>
             <div id="log-display" class="log-list">
-                <!-- Log entries will be added here by JS -->
+                <!-- Log kayıtları JS ile buraya eklenecek -->
             </div>
         </div>
     </div>
 
     <div id="container" class="relative w-full h-screen flex flex-col items-center justify-center p-4 text-center">
-        <!-- Main content sections -->
+        <!-- Ana içerik bölümleri -->
         
         <!-- Hoş Geldin Ekranı -->
         <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center fade-in">
@@ -206,10 +206,10 @@
             
             <div id="puzzle-area" class="flex flex-col items-center">
                 <div id="puzzle-slots" class="flex space-x-2 mb-8">
-                    <!-- Puzzle slots will be created by JS -->
+                    <!-- Bulmaca yuvaları JS ile oluşturulacak -->
                 </div>
                 <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2">
-                    <!-- Puzzle pieces will be created by JS -->
+                    <!-- Bulmaca parçaları JS ile oluşturulacak -->
                 </div>
             </div>
             
@@ -235,16 +235,27 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, increment, setDoc, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase and Firestore configuration
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Firebase ayarlarınızı buraya yapıştırın. Bu ayarları Firebase konsolunuzda "Project settings" kısmından alabilirsiniz.
+        // Örnek: const firebaseConfig = { apiKey: "...", authDomain: "...", ... };
+        // Şu anki değerler boştur, kendi projenizin bilgilerini buraya girmeniz GEREKİR.
+        const firebaseConfig = {
+  apiKey: "AIzaSyBW0Q5JiiiVzE0760sAzx_YOstvCOrEOqs",
+  authDomain: "buyulu-bulmaca.firebaseapp.com",
+  projectId: "buyulu-bulmaca",
+  storageBucket: "buyulu-bulmaca.firebasestorage.app",
+  messagingSenderId: "824281941285",
+  appId: "1:824281941285:web:74b3b0a828a3028be9c6cc",
+  measurementId: "G-5YVBV3BQXM"
+};
+
+        const appId = firebaseConfig.projectId || 'default-app-id';
+        const initialAuthToken = null;
 
         let app = null;
         let db = null;
         let auth = null;
 
-        // UI Elements
+        // UI Elementleri
         const welcomeScreen = document.getElementById('welcome-screen');
         const startBtn = document.getElementById('start-btn');
         const puzzleScreen = document.getElementById('puzzle-screen');
@@ -265,7 +276,7 @@
 
         const correctPassword = '4779';
 
-        // Starfield background
+        // Yıldız tarlası arka planı
         const starfieldCanvas = document.getElementById('starfield-canvas');
         const ctxStarfield = starfieldCanvas.getContext('2d');
         let stars = [];
@@ -308,18 +319,18 @@
             createStars();
         });
 
-        // Start stars
+        // Yıldızları başlat
         resizeCanvas();
         createStars();
         animateStarfield();
 
-        // --- Puzzle Logic ---
+        // --- Bulmaca Mantığı ---
         const correctWord = 'MERYEM';
         let puzzleSolved = false;
         let selectedPiece = null;
 
         function createPuzzle() {
-            // Create slots for the letters
+            // Harfler için yuvaları oluştur
             for (let i = 0; i < correctWord.length; i++) {
                 const slot = document.createElement('div');
                 slot.classList.add('puzzle-slot');
@@ -327,7 +338,7 @@
                 puzzleSlots.appendChild(slot);
             }
 
-            // Create and shuffle puzzle pieces
+            // Bulmaca parçalarını oluştur ve karıştır
             const letters = correctWord.split('');
             const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
 
@@ -340,7 +351,7 @@
             });
         }
         
-        // --- Click and place events ---
+        // --- Tıklama ve yerleştirme olayları ---
         document.addEventListener('click', (e) => {
             if (puzzleSolved) return;
 
@@ -348,23 +359,23 @@
             const clickedSlot = e.target.closest('.puzzle-slot');
 
             if (clickedPiece) {
-                // If a piece is already selected, unselect it
+                // Eğer bir parça zaten seçiliyse, seçimini kaldır
                 if (selectedPiece) {
                     selectedPiece.classList.remove('selected');
                 }
                 selectedPiece = clickedPiece;
                 selectedPiece.classList.add('selected');
 
-                // If the piece is in a slot, move it back
+                // Eğer parça bir yuvadaysa, onu geri taşı
                 if (clickedPiece.parentNode.classList.contains('puzzle-slot')) {
                     puzzlePiecesContainer.appendChild(clickedPiece);
                     checkPuzzle();
-                    selectedPiece.classList.remove('selected'); // Unselect after moving
+                    selectedPiece.classList.remove('selected'); // Taşıdıktan sonra seçimi kaldır
                     selectedPiece = null;
                 }
 
             } else if (clickedSlot) {
-                // If a slot is empty and a piece is selected, place the piece in the slot
+                // Eğer yuva boşsa ve bir parça seçiliyse, parçayı yuvaya yerleştir
                 if (selectedPiece && !clickedSlot.children.length) {
                     clickedSlot.appendChild(selectedPiece);
                     selectedPiece.classList.remove('selected');
@@ -378,7 +389,7 @@
             let userWord = '';
             const filledSlots = puzzleSlots.querySelectorAll('.puzzle-letter');
             
-            // Do not check until all slots are filled
+            // Tüm yuvalar dolana kadar kontrol etme
             if (filledSlots.length < correctWord.length) {
                 puzzleStatus.textContent = "Tüm harfleri yerleştir.";
                 return;
@@ -408,7 +419,7 @@
             }
         }
         
-        // --- Screen Transitions ---
+        // --- Ekran Geçişleri ---
         function showScreen(screenElement) {
             const screens = [welcomeScreen, puzzleScreen, messageScreen];
             screens.forEach(screen => {
@@ -427,29 +438,25 @@
             puzzleStatus.textContent = "Sırayı doğru tahmin et.";
         });
         
-        // --- Firebase Counter Functions ---
+        // --- Firebase Sayaç Fonksiyonları ---
         async function setupFirebase() {
             try {
                 if (!firebaseConfig.apiKey) {
-                    console.error('Firebase config not found.');
+                    // Firebase ayarları girilmediyse, kullanıcıya uyarı göster ve fonksiyonu sonlandır.
+                    console.error('Hata: Firebase config bilgileri eksik. Lütfen kendi Firebase projenizden aldığınız bilgileri koda yapıştırın.');
                     return;
                 }
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Sign in anonymously and log the initial visit
+                // Anonim olarak oturum aç ve ilk ziyareti kaydet
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        // Log visit for the welcome screen
                         logVisit('welcome');
                     } else {
                         try {
-                           if (initialAuthToken) {
-                               await signInWithCustomToken(auth, initialAuthToken);
-                           } else {
-                               await signInAnonymously(auth);
-                           }
+                           await signInAnonymously(auth);
                         } catch (error) {
                             console.error("Firebase giriş hatası:", error);
                         }
@@ -467,7 +474,7 @@
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
             
             try {
-                // Increment page counter
+                // Sayfa sayacını artır
                 const docSnap = await getDoc(counterDocRef);
                 if (docSnap.exists()) {
                     await updateDoc(counterDocRef, {
@@ -479,7 +486,7 @@
                     });
                 }
                 
-                // Add a log entry for the visit
+                // Ziyaret için bir günlük kaydı ekle
                 await addDoc(logCollectionRef, {
                     page: page,
                     timestamp: serverTimestamp()
@@ -492,7 +499,7 @@
         async function updateAndDisplayLogs() {
             if (!db) return;
             
-            // Get section counts
+            // Bölüm sayımlarını al
             const welcomeCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/welcome_counter`);
             const puzzleCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/puzzle_counter`);
             const messageCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/message_counter`);
@@ -507,7 +514,7 @@
             puzzleCountElement.textContent = puzzleSnap.exists() ? puzzleSnap.data().count : '0';
             messageCountElement.textContent = messageSnap.exists() ? messageSnap.data().count : '0';
 
-            // Get log records
+            // Günlük kayıtlarını al
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
             const q = query(logCollectionRef, orderBy("timestamp", "desc"), limit(10));
             const logSnap = await getDocs(q);
