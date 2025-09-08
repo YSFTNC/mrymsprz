@@ -224,7 +224,7 @@
                 <p class="text-md md:text-lg font-['Cormorant Garamond'] italic leading-relaxed text-white/90">
                     Sevgili Meryem,<br><br>
                     Yeni yaşın, bir puzzle’ın eksik parçalarını tamamlar gibi hayatına sürpriz mutluluklar getirsin ve her gün sana küçük ama değerli sevinçler sunsun. Umarım bu yılın, Selim’in karpuz yerken ki o hevesi gibi neşeli ve dolu dolu geçer. Patrick’in o tatlı halleri gibi, senin de etrafındakilere mutluluk saçtığın anlar çoğalsın. Yeni yaşın sana çok güzel kapılar açsın. Doğum günün kutlu olsun.<br><br>
-                   ,<br>
+                    ,<br>
                 </p>
             </div>
         </div>
@@ -235,21 +235,10 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, increment, setDoc, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase ayarlarınızı buraya yapıştırın. Bu ayarları Firebase konsolunuzda "Project settings" kısmından alabilirsiniz.
-        // Örnek: const firebaseConfig = { apiKey: "...", authDomain: "...", ... };
-        // Şu anki değerler boştur, kendi projenizin bilgilerini buraya girmeniz GEREKİR.
-        const firebaseConfig = {
-  apiKey: "AIzaSyBW0Q5JiiiVzE0760sAzx_YOstvCOrEOqs",
-  authDomain: "buyulu-bulmaca.firebaseapp.com",
-  projectId: "buyulu-bulmaca",
-  storageBucket: "buyulu-bulmaca.firebasestorage.app",
-  messagingSenderId: "824281941285",
-  appId: "1:824281941285:web:74b3b0a828a3028be9c6cc",
-  measurementId: "G-5YVBV3BQXM"
-};
-
-        const appId = firebaseConfig.projectId || 'default-app-id';
-        const initialAuthToken = null;
+        // Global değişkenleri ortamdan alıyoruz
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app = null;
         let db = null;
@@ -441,7 +430,7 @@
         // --- Firebase Sayaç Fonksiyonları ---
         async function setupFirebase() {
             try {
-                if (!firebaseConfig.apiKey) {
+                if (Object.keys(firebaseConfig).length === 0) {
                     // Firebase ayarları girilmediyse, kullanıcıya uyarı göster ve fonksiyonu sonlandır.
                     console.error('Hata: Firebase config bilgileri eksik. Lütfen kendi Firebase projenizden aldığınız bilgileri koda yapıştırın.');
                     return;
@@ -456,7 +445,11 @@
                         logVisit('welcome');
                     } else {
                         try {
-                           await signInAnonymously(auth);
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
                         } catch (error) {
                             console.error("Firebase giriş hatası:", error);
                         }
