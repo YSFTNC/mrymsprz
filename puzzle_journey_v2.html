@@ -45,15 +45,20 @@
             background-color: #3b0764;
             border: 2px solid #5b21b6;
             border-radius: 8px;
-            cursor: grab;
-            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
-            user-select: none; /* Metin seçimini engelle */
-            -webkit-user-select: none; /* Safari için */
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
         }
         
         .puzzle-letter:hover {
             transform: scale(1.05);
             background-color: #4c0882;
+        }
+
+        .puzzle-letter.selected {
+            border-color: #f0abfc;
+            box-shadow: 0 0 15px #f0abfc;
         }
 
         .puzzle-slot {
@@ -66,16 +71,13 @@
             justify-content: center;
             background-color: rgba(255, 255, 255, 0.05);
             transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
         }
         
         .puzzle-slot.correct-slot {
             border-color: #f0abfc;
             background-color: rgba(240, 171, 252, 0.2);
             box-shadow: 0 0 15px #f0abfc;
-        }
-
-        .puzzle-slot.drag-over {
-            background-color: rgba(255, 255, 255, 0.1);
         }
 
         #starfield-canvas {
@@ -90,6 +92,9 @@
     <canvas id="starfield-canvas"></canvas>
 
     <div id="container" class="relative w-full h-screen flex flex-col items-center justify-center p-4 text-center">
+        <!-- Ana içerik bölümleri -->
+        
+        <!-- Hoş Geldin Ekranı -->
         <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center fade-in">
             <h1 class="text-5xl md:text-7xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Büyülü Bir Puzzle</h1>
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Bu kilitli sandığı açmak için doğru harfleri diz.</p>
@@ -98,20 +103,24 @@
             </button>
         </div>
 
+        <!-- Bulmaca Ekranı -->
         <div id="puzzle-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
             <h2 class="text-3xl md:text-5xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Harfleri Birleştir</h2>
-            <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Harfleri doğru sıraya sürükle ve bırak.</p>
+            <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Harflere tıkla ve doğru kutulara yerleştir.</p>
             
             <div id="puzzle-area" class="flex flex-col items-center">
                 <div id="puzzle-slots" class="flex space-x-2 mb-8">
-                    </div>
+                    <!-- Puzzle slots for the letters will be created by JS -->
+                </div>
                 <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2">
-                    </div>
+                    <!-- Puzzle pieces will be created by JS -->
+                </div>
             </div>
             
             <p id="puzzle-status" class="text-white/70 italic min-h-[20px] mt-4"></p>
         </div>
         
+        <!-- Son Mesaj Ekranı -->
         <div id="message-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000">
             <h2 class="text-3xl md:text-5xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Gizem Çözüldü</h2>
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Bu sihirli yolun sonunda seni bekleyen şey.</p>
@@ -134,7 +143,7 @@
         const puzzlePiecesContainer = document.getElementById('puzzle-pieces');
         const puzzleStatus = document.getElementById('puzzle-status');
 
-        // Starfield background
+        // Yıldız tarlası arka planı
         const starfieldCanvas = document.getElementById('starfield-canvas');
         const ctxStarfield = starfieldCanvas.getContext('2d');
         let stars = [];
@@ -177,18 +186,18 @@
             createStars();
         });
 
-        // Initialize starfield
+        // Yıldızları başlat
         resizeCanvas();
         createStars();
         animateStarfield();
 
-        // --- Puzzle Logic ---
+        // --- Bulmaca Mantığı ---
         const correctWord = 'MERYEM';
         let puzzleSolved = false;
-        let puzzlePieces = [];
+        let selectedPiece = null;
 
         function createPuzzle() {
-            // Create slots
+            // Harflerin yerleştirileceği kutuları oluştur
             for (let i = 0; i < correctWord.length; i++) {
                 const slot = document.createElement('div');
                 slot.classList.add('puzzle-slot');
@@ -196,156 +205,71 @@
                 puzzleSlots.appendChild(slot);
             }
 
-            // Create and shuffle pieces
+            // Harf parçalarını oluştur ve karıştır
             const letters = correctWord.split('');
             const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
 
-            shuffledLetters.forEach((letter, index) => {
+            shuffledLetters.forEach((letter) => {
                 const piece = document.createElement('div');
                 piece.classList.add('puzzle-letter');
-                piece.draggable = true;
                 piece.textContent = letter;
                 piece.dataset.letter = letter;
-                piece.dataset.originalIndex = index;
                 puzzlePiecesContainer.appendChild(piece);
-                puzzlePieces.push(piece);
             });
         }
         
-        // --- Drag and Drop (Mouse) and Touch Events ---
-        let draggedItem = null; // Mouse
-        let touchedItem = null; // Touch
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let originalParent = null;
+        // --- Tıkla ve Yerleştir Olayları ---
+        document.addEventListener('click', (e) => {
+            if (puzzleSolved) return;
 
-        // Mouse Events
-        puzzlePiecesContainer.addEventListener('dragstart', (e) => {
-            if (!e.target.classList.contains('puzzle-letter')) return;
-            draggedItem = e.target;
-            setTimeout(() => {
-                e.target.style.opacity = '0.5';
-            }, 0);
-        });
+            const clickedPiece = e.target.closest('.puzzle-letter');
+            const clickedSlot = e.target.closest('.puzzle-slot');
 
-        puzzlePiecesContainer.addEventListener('dragend', (e) => {
-            if (draggedItem) {
-                draggedItem.style.opacity = '1';
-                draggedItem = null;
+            if (clickedPiece) {
+                // Eğer bir parça seçilmişse, yeni seçilen parçayı işaretle
+                if (selectedPiece) {
+                    selectedPiece.classList.remove('selected');
+                }
+                selectedPiece = clickedPiece;
+                selectedPiece.classList.add('selected');
+
+                // Eğer parça bir yuvada ise, onu geri taşı
+                if (clickedPiece.parentNode.classList.contains('puzzle-slot')) {
+                    puzzlePiecesContainer.appendChild(clickedPiece);
+                    checkPuzzle();
+                    selectedPiece.classList.remove('selected'); // Taşıyınca seçimi kaldır
+                    selectedPiece = null;
+                }
+
+            } else if (clickedSlot) {
+                // Eğer bir yuva boşsa ve bir parça seçilmişse, parçayı yuvaya yerleştir
+                if (selectedPiece && !clickedSlot.children.length) {
+                    clickedSlot.appendChild(selectedPiece);
+                    selectedPiece.classList.remove('selected');
+                    selectedPiece = null;
+                    checkPuzzle();
+                }
             }
         });
 
-        puzzleSlots.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (e.target.classList.contains('puzzle-slot') && !e.target.children.length) {
-                e.target.classList.add('drag-over');
-            }
-        });
-
-        puzzleSlots.addEventListener('dragleave', (e) => {
-            if (e.target.classList.contains('puzzle-slot')) {
-                e.target.classList.remove('drag-over');
-            }
-        });
-
-        puzzleSlots.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const slot = e.target.closest('.puzzle-slot');
-            if (slot && draggedItem && !slot.children.length) {
-                slot.appendChild(draggedItem);
-                slot.classList.remove('drag-over');
-                checkPuzzle();
-            }
-        });
-
-        // Touch Events
-        puzzlePiecesContainer.addEventListener('touchstart', (e) => {
-            if (!e.target.classList.contains('puzzle-letter')) return;
-            e.preventDefault();
-
-            touchedItem = e.target;
-            originalParent = touchedItem.parentNode;
-            
-            const clonedItem = touchedItem.cloneNode(true);
-            clonedItem.style.position = 'absolute';
-            clonedItem.style.zIndex = '1000';
-            clonedItem.style.opacity = '0.8';
-            document.body.appendChild(clonedItem);
-
-            touchedItem.style.visibility = 'hidden';
-            touchedItem = clonedItem;
-
-            const touch = e.touches[0];
-            touchStartX = touch.clientX - touchedItem.getBoundingClientRect().left;
-            touchStartY = touch.clientY - touchedItem.getBoundingClientRect().top;
-        });
-
-        document.addEventListener('touchmove', (e) => {
-            if (!touchedItem) return;
-            e.preventDefault();
-
-            const touch = e.touches[0];
-            const x = touch.clientX - touchStartX;
-            const y = touch.clientY - touchStartY;
-            
-            touchedItem.style.left = `${x}px`;
-            touchedItem.style.top = `${y}px`;
-
-            const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-            const slot = elementUnderFinger ? elementUnderFinger.closest('.puzzle-slot') : null;
-            
-            document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('drag-over'));
-            if (slot && !slot.children.length) {
-                slot.classList.add('drag-over');
-            }
-        });
-
-        document.addEventListener('touchend', (e) => {
-            if (!touchedItem) return;
-            e.preventDefault();
-
-            const x = e.changedTouches[0].clientX;
-            const y = e.changedTouches[0].clientY;
-            const elementUnderFinger = document.elementFromPoint(x, y);
-            const slot = elementUnderFinger ? elementUnderFinger.closest('.puzzle-slot') : null;
-            
-            if (slot && !slot.children.length) {
-                const originalElement = document.querySelector(`.puzzle-letter[data-letter="${touchedItem.dataset.letter}"][data-original-index="${touchedItem.dataset.originalIndex}"]`);
-                slot.appendChild(originalElement);
-                originalElement.style.visibility = 'visible';
-                originalElement.style.position = '';
-                originalElement.style.left = '';
-                originalElement.style.top = '';
-                checkPuzzle();
-            } else {
-                const originalElement = document.querySelector(`.puzzle-letter[data-letter="${touchedItem.dataset.letter}"][data-original-index="${touchedItem.dataset.originalIndex}"]`);
-                originalParent.appendChild(originalElement);
-                originalElement.style.visibility = 'visible';
-            }
-
-            if (touchedItem.parentNode === document.body) {
-                touchedItem.remove();
-            }
-            touchedItem = null;
-            document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('drag-over'));
-        });
-        
         function checkPuzzle() {
             let userWord = '';
             const filledSlots = puzzleSlots.querySelectorAll('.puzzle-letter');
+            
+            // Tüm harfler yerleştirilmediyse kontrolü yapma
             if (filledSlots.length < correctWord.length) {
                 puzzleStatus.textContent = "Tüm harfleri yerleştir.";
                 return;
             }
 
             let isCorrect = true;
-            filledSlots.forEach((letterElement, index) => {
-                const letter = letterElement.dataset.letter;
-                userWord += letter;
+            const puzzleLetters = Array.from(puzzleSlots.children).map(slot => slot.textContent.trim());
+
+            puzzleLetters.forEach((letter, index) => {
                 if (letter === correctWord[index]) {
-                    letterElement.closest('.puzzle-slot').classList.add('correct-slot');
+                    puzzleSlots.children[index].classList.add('correct-slot');
                 } else {
-                    letterElement.closest('.puzzle-slot').classList.remove('correct-slot');
+                    puzzleSlots.children[index].classList.remove('correct-slot');
                     isCorrect = false;
                 }
             });
@@ -359,7 +283,7 @@
             }
         }
         
-        // --- Screen Transitions ---
+        // --- Ekran Geçişleri ---
         function showScreen(screenElement) {
             const screens = [welcomeScreen, puzzleScreen, messageScreen];
             screens.forEach(screen => {
@@ -377,7 +301,7 @@
             puzzleStatus.textContent = "Sırayı doğru tahmin et.";
         });
 
-        // Set up initial state
+        // Başlangıç ayarları
         window.onload = function() {
             resizeCanvas();
             createStars();
@@ -387,4 +311,3 @@
     </script>
 </body>
 </html>
-                                
