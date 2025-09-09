@@ -368,7 +368,11 @@
 
         // Basit, okunması kolay yollar: visit_counter/<page> ve visit_logs/*
         async function logVisit(page) {
-            if (!db) return;
+            // Sadece db mevcutsa logla
+            if (!db) {
+                console.error("Veritabanı bağlantısı henüz kurulmadı. Ziyaretçi kaydı atlanıyor.");
+                return;
+            }
             const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, page);
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
 
@@ -387,8 +391,12 @@
         }
 
         async function updateAndDisplayLogs() {
-            if (!db) return;
-
+            // db nesnesinin mevcut olduğundan emin ol
+            if (!db) {
+                passwordStatus.textContent = "Veriler yükleniyor, lütfen bekleyin...";
+                setTimeout(updateAndDisplayLogs, 500); // Yarım saniye sonra tekrar dene
+                return;
+            }
             try {
                 const welcomeRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "welcome");
                 const puzzleRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "puzzle");
