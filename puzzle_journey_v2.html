@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Büyülü Bulmaca Yolculuğu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -14,7 +14,6 @@
             background-color: #0c0a2a;
         }
 
-        /* Büyülü ışıltı için özel CSS */
         .glowing-text {
             text-shadow: 0 0 5px #a855f7, 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 40px #a855f7;
             animation: glow 1.5s ease-in-out infinite alternate;
@@ -23,134 +22,59 @@
         .fade-in {
             animation: fadeIn 2s ease-in-out forwards;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes glow {
             from { text-shadow: 0 0 5px #a855f7, 0 0 10px #a855f7; }
             to { text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 30px #a855f7; }
         }
 
         .puzzle-letter {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            background-color: #3b0764;
-            border: 2px solid #5b21b6;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s;
-            user-select: none;
-            -webkit-user-select: none;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: 700; background-color: #3b0764; border: 2px solid #5b21b6;
+            border-radius: 8px; cursor: pointer; transition: transform 0.2s ease-in-out, background-color 0.2s, border-color 0.2s;
+            user-select: none; -webkit-user-select: none;
         }
-        
-        .puzzle-letter:hover {
-            transform: scale(1.05);
-            background-color: #4c0882;
-        }
-
-        .puzzle-letter.selected {
-            border-color: #f0abfc;
-            box-shadow: 0 0 15px #f0abfc;
-        }
+        .puzzle-letter:hover { transform: scale(1.05); background-color: #4c0882; }
+        .puzzle-letter.selected { border-color: #f0abfc; box-shadow: 0 0 15px #f0abfc; }
 
         .puzzle-slot {
-            width: 65px;
-            height: 65px;
-            border: 2px dashed #9333ea;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(255, 255, 255, 0.05);
-            transition: background-color 0.2s ease-in-out;
-            cursor: pointer;
+            width: 65px; height: 65px; border: 2px dashed #9333ea; border-radius: 12px;
+            display:flex; align-items:center; justify-content:center; background-color: rgba(255,255,255,0.05);
+            transition: background-color 0.2s ease-in-out; cursor: pointer;
         }
-        
         .puzzle-slot.correct-slot {
-            border-color: #f0abfc;
-            background-color: rgba(240, 171, 252, 0.2);
-            box-shadow: 0 0 15px #f0abfc;
-        }
-        
-        #starfield-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: -1;
+            border-color: #f0ababfc; background-color: rgba(240,171,252,0.2); box-shadow: 0 0 15px #f0abfc;
         }
 
-        /* Sayaç düğmesinin görünmez olması için stil */
+        #starfield-canvas { position:absolute; top:0; left:0; z-index:-1; }
+
         #counter-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            z-index: 50;
-            transition: all 0.3s ease;
+            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; background-color: transparent;
+            border: none; cursor: pointer; z-index: 50; transition: all 0.3s ease;
         }
-        
+
         #password-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            background-color: rgba(12, 10, 42, 0.9);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid #5b21b6;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-            text-align: center;
-            max-height: 80vh;
-            overflow-y: auto;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 100; background-color: rgba(12,10,42,0.9); padding: 2rem; border-radius: 1rem;
+            border: 1px solid #5b21b6; box-shadow: 0 0 20px rgba(168,85,247,0.5); text-align: center;
+            max-height: 80vh; overflow-y: auto;
         }
 
         .log-entry {
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            background-color: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;
         }
+        .log-list { max-height: 200px; overflow-y: auto; border-radius: 8px; padding: 10px; }
 
-        .log-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        
-        .section-count {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-        .section-count-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            padding: 0 10px;
-        }
+        .section-count { display:flex; justify-content:space-between; margin-bottom:1rem; text-align:left; }
+        .section-count-item { display:flex; flex-direction:column; align-items:center; flex:1; padding:0 10px; }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#0c0a2a] to-[#4b0c7c] text-white flex items-center justify-center min-h-screen">
     <canvas id="starfield-canvas"></canvas>
 
     <!-- Ziyaretçi Sayacı Toggle -->
-    <div id="counter-toggle">
+    <div id="counter-toggle" title="Admin: Ziyaretçi kayıtlarını gör">
         <span id="toggle-text"></span>
     </div>
 
@@ -159,9 +83,7 @@
         <h3 class="text-xl font-bold mb-4">Şifre Girin</h3>
         <input type="password" id="password-input" class="bg-white/10 text-white p-2 rounded-md border border-white/20 mb-2 w-full text-center" placeholder="Şifre...">
         <p id="password-status" class="text-red-400 text-sm mb-2"></p>
-        <button id="password-submit" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full">
-            Onayla
-        </button>
+        <button id="password-submit" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full">Onayla</button>
         
         <div id="counter-content" class="hidden mt-6">
             <h4 class="text-lg font-bold mb-4 text-center">Ziyaretçi Sayıları</h4>
@@ -188,8 +110,6 @@
     </div>
 
     <div id="container" class="relative w-full h-screen flex flex-col items-center justify-center p-4 text-center">
-        <!-- Ana içerik bölümleri -->
-        
         <!-- Hoş Geldin Ekranı -->
         <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center fade-in">
             <h1 class="text-5xl md:text-7xl font-bold font-['Cormorant Garamond'] mb-4 glowing-text">Büyülü Bir Puzzle</h1>
@@ -205,12 +125,8 @@
             <p class="text-lg md:text-xl font-['Inter'] mb-8 text-white/80">Harflere tıkla ve doğru kutulara yerleştir.</p>
             
             <div id="puzzle-area" class="flex flex-col items-center">
-                <div id="puzzle-slots" class="flex space-x-2 mb-8">
-                    <!-- Bulmaca yuvaları JS ile oluşturulacak -->
-                </div>
-                <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2">
-                    <!-- Bulmaca parçaları JS ile oluşturulacak -->
-                </div>
+                <div id="puzzle-slots" class="flex space-x-2 mb-8"></div>
+                <div id="puzzle-pieces" class="flex flex-wrap justify-center space-x-2"></div>
             </div>
             
             <p id="puzzle-status" class="text-white/70 italic min-h-[20px] mt-4"></p>
@@ -232,19 +148,20 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment, setDoc, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore, doc, getDoc, updateDoc, increment, setDoc,
+            collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global değişkenleri ortamdan alıyoruz
+        // ---------- Vars ----------
+        let app = null, db = null, auth = null;
+        const correctPassword = '4779';
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let hasLoggedWelcome = false;
 
-        let app = null;
-        let db = null;
-        let auth = null;
-
-        // UI Elementleri
+        // UI elementleri
         const welcomeScreen = document.getElementById('welcome-screen');
         const startBtn = document.getElementById('start-btn');
         const puzzleScreen = document.getElementById('puzzle-screen');
@@ -263,9 +180,7 @@
         const messageCountElement = document.getElementById('message-count');
         const logDisplay = document.getElementById('log-display');
 
-        const correctPassword = '4779';
-
-        // Yıldız tarlası arka planı
+        // Yıldız tarlası
         const starfieldCanvas = document.getElementById('starfield-canvas');
         const ctxStarfield = starfieldCanvas.getContext('2d');
         let stars = [];
@@ -308,18 +223,17 @@
             createStars();
         });
 
-        // Yıldızları başlat
-        resizeCanvas();
-        createStars();
-        animateStarfield();
-
-        // --- Bulmaca Mantığı ---
+        // ---------- Bulmaca Mantığı ----------
         const correctWord = 'MERYEM';
         let puzzleSolved = false;
         let selectedPiece = null;
 
         function createPuzzle() {
-            // Harfler için yuvaları oluştur
+            // temizle (yeniden yükleme durumları için)
+            puzzleSlots.innerHTML = '';
+            puzzlePiecesContainer.innerHTML = '';
+
+            // yuvaları oluştur
             for (let i = 0; i < correctWord.length; i++) {
                 const slot = document.createElement('div');
                 slot.classList.add('puzzle-slot');
@@ -327,7 +241,7 @@
                 puzzleSlots.appendChild(slot);
             }
 
-            // Bulmaca parçalarını oluştur ve karıştır
+            // harfleri karıştır
             const letters = correctWord.split('');
             const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
 
@@ -339,8 +253,7 @@
                 puzzlePiecesContainer.appendChild(piece);
             });
         }
-        
-        // --- Tıklama ve yerleştirme olayları ---
+
         document.addEventListener('click', (e) => {
             if (puzzleSolved) return;
 
@@ -348,23 +261,19 @@
             const clickedSlot = e.target.closest('.puzzle-slot');
 
             if (clickedPiece) {
-                // Eğer bir parça zaten seçiliyse, seçimini kaldır
-                if (selectedPiece) {
-                    selectedPiece.classList.remove('selected');
-                }
+                if (selectedPiece) selectedPiece.classList.remove('selected');
                 selectedPiece = clickedPiece;
                 selectedPiece.classList.add('selected');
 
-                // Eğer parça bir yuvadaysa, onu geri taşı
+                // parça zaten bir slot içindeyse, geri taşımak için
                 if (clickedPiece.parentNode.classList.contains('puzzle-slot')) {
                     puzzlePiecesContainer.appendChild(clickedPiece);
                     checkPuzzle();
-                    selectedPiece.classList.remove('selected'); // Taşıdıktan sonra seçimi kaldır
+                    selectedPiece.classList.remove('selected');
                     selectedPiece = null;
                 }
 
             } else if (clickedSlot) {
-                // Eğer yuva boşsa ve bir parça seçiliyse, parçayı yuvaya yerleştir
                 if (selectedPiece && !clickedSlot.children.length) {
                     clickedSlot.appendChild(selectedPiece);
                     selectedPiece.classList.remove('selected');
@@ -375,10 +284,7 @@
         });
 
         function checkPuzzle() {
-            let userWord = '';
             const filledSlots = puzzleSlots.querySelectorAll('.puzzle-letter');
-            
-            // Tüm yuvalar dolana kadar kontrol etme
             if (filledSlots.length < correctWord.length) {
                 puzzleStatus.textContent = "Tüm harfleri yerleştir.";
                 return;
@@ -402,13 +308,13 @@
                 setTimeout(() => {
                     logVisit('message');
                     showScreen(messageScreen);
-                }, 2000);
+                }, 1200);
             } else {
                 puzzleStatus.textContent = "Harflerin sırası yanlış. Tekrar dene.";
             }
         }
-        
-        // --- Ekran Geçişleri ---
+
+        // ---------- Ekran Geçişleri ----------
         function showScreen(screenElement) {
             const screens = [welcomeScreen, puzzleScreen, messageScreen];
             screens.forEach(screen => {
@@ -426,64 +332,55 @@
             showScreen(puzzleScreen);
             puzzleStatus.textContent = "Sırayı doğru tahmin et.";
         });
-        
-        // --- Firebase Sayaç Fonksiyonları ---
+
+        // ---------- Firebase (setup / log / gösterme) ----------
         async function setupFirebase() {
             try {
-                if (Object.keys(firebaseConfig).length === 0) {
-                    // Firebase ayarları girilmediyse, kullanıcıya uyarı göster ve fonksiyonu sonlandır.
-                    console.error('Hata: Firebase config bilgileri eksik. Lütfen kendi Firebase projenizden aldığınız bilgileri koda yapıştırın.');
-                    return;
-                }
+                // Ortam tarafından sağlanan Firebase config ve token'ı kullan
+                const firebaseConfig = JSON.parse(__firebase_config);
                 app = initializeApp(firebaseConfig);
+                
+                // analytics opsiyonel
+                try { getAnalytics(app); } catch(e) { /* analytics hata verirse yok say */ }
+
                 db = getFirestore(app);
                 auth = getAuth(app);
-                
-                // Anonim olarak oturum aç ve ilk ziyareti kaydet
+
+                // onAuthStateChanged dinleyicisini auth nesnesi oluşturulduktan sonra ekle
                 onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        logVisit('welcome');
-                    } else {
-                        try {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error("Firebase giriş hatası:", error);
-                        }
+                    if (user && !hasLoggedWelcome) {
+                        await logVisit('welcome');
+                        hasLoggedWelcome = true;
                     }
                 });
+
+                // Ortam tarafından sağlanan token ile giriş yap
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
             } catch (error) {
                 console.error("Firebase kurulumu veya giriş hatası:", error);
             }
         }
 
+        // Basit, okunması kolay yollar: visit_counter/<page> ve visit_logs/*
         async function logVisit(page) {
             if (!db) return;
-            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter/${page}_counter`);
+            const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, page);
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
-            
+
             try {
-                // Sayfa sayacını artır
                 const docSnap = await getDoc(counterDocRef);
                 if (docSnap.exists()) {
-                    await updateDoc(counterDocRef, {
-                        count: increment(1)
-                    });
+                    await updateDoc(counterDocRef, { count: increment(1) });
                 } else {
-                    await setDoc(counterDocRef, {
-                        count: 1
-                    });
+                    await setDoc(counterDocRef, { count: 1 });
                 }
-                
-                // Ziyaret için bir günlük kaydı ekle
-                await addDoc(logCollectionRef, {
-                    page: page,
-                    timestamp: serverTimestamp()
-                });
+
+                await addDoc(logCollectionRef, { page: page, timestamp: serverTimestamp() });
             } catch (error) {
                 console.error("Sayaç veya kayıt hatası:", error);
             }
@@ -491,48 +388,49 @@
 
         async function updateAndDisplayLogs() {
             if (!db) return;
-            
-            // Bölüm sayımlarını al
-            const welcomeCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/welcome_counter`);
-            const puzzleCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/puzzle_counter`);
-            const messageCounterRef = doc(db, `artifacts/${appId}/public/data/visit_counter/message_counter`);
 
-            const [welcomeSnap, puzzleSnap, messageSnap] = await Promise.all([
-                getDoc(welcomeCounterRef),
-                getDoc(puzzleCounterRef),
-                getDoc(messageCounterRef)
-            ]);
-            
-            welcomeCountElement.textContent = welcomeSnap.exists() ? welcomeSnap.data().count : '0';
-            puzzleCountElement.textContent = puzzleSnap.exists() ? puzzleSnap.data().count : '0';
-            messageCountElement.textContent = messageSnap.exists() ? messageSnap.data().count : '0';
+            try {
+                const welcomeRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "welcome");
+                const puzzleRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "puzzle");
+                const messageRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "message");
 
-            // Günlük kayıtlarını al
-            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
-            const q = query(logCollectionRef, orderBy("timestamp", "desc"), limit(10));
-            const logSnap = await getDocs(q);
+                const [welcomeSnap, puzzleSnap, messageSnap] = await Promise.all([
+                    getDoc(welcomeRef), getDoc(puzzleRef), getDoc(messageRef)
+                ]);
 
-            logDisplay.innerHTML = '';
-            if (!logSnap.empty) {
-                logSnap.forEach((doc) => {
-                    const data = doc.data();
-                    const timestamp = data.timestamp ? data.timestamp.toDate() : 'Bilinmiyor';
-                    const page = data.page || 'Bilinmiyor';
-                    const logEntry = document.createElement('div');
-                    logEntry.classList.add('log-entry', 'text-sm');
-                    const pageName = page === 'welcome' ? 'Ana Sayfa' : (page === 'puzzle' ? 'Bulmaca' : 'Mesaj');
-                    logEntry.textContent = `${pageName} - ${timestamp.toLocaleString('tr-TR')}`;
-                    logDisplay.appendChild(logEntry);
-                });
-            } else {
-                 logDisplay.innerHTML = '<p class="text-white/50 italic">Kayıt bulunamadı.</p>';
+                welcomeCountElement.textContent = welcomeSnap.exists() ? welcomeSnap.data().count : '0';
+                puzzleCountElement.textContent = puzzleSnap.exists() ? puzzleSnap.data().count : '0';
+                messageCountElement.textContent = messageSnap.exists() ? messageSnap.data().count : '0';
+
+                const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
+                const q = query(logCollectionRef, orderBy("timestamp", "desc"), limit(10));
+                const logSnap = await getDocs(q);
+
+                logDisplay.innerHTML = '';
+                if (!logSnap.empty) {
+                    logSnap.forEach((d) => {
+                        const data = d.data();
+                        const timestamp = data.timestamp ? data.timestamp.toDate() : null;
+                        const page = data.page || 'Bilinmiyor';
+                        const pageName = page === 'welcome' ? 'Ana Sayfa' : (page === 'puzzle' ? 'Bulmaca' : 'Mesaj');
+                        const logEntry = document.createElement('div');
+                        logEntry.classList.add('log-entry', 'text-sm');
+                        logEntry.textContent = `${pageName} - ${timestamp ? timestamp.toLocaleString('tr-TR') : 'Bilinmiyor'}`;
+                        logDisplay.appendChild(logEntry);
+                    });
+                } else {
+                    logDisplay.innerHTML = '<p class="text-white/50 italic">Kayıt bulunamadı.</p>';
+                }
+            } catch (err) {
+                console.error("updateAndDisplayLogs hatası:", err);
             }
         }
 
-        // Sayaç Toggle ve Şifre Kontrolü
+        // ---------- Modal ve şifre kontrolü ----------
         counterToggle.addEventListener('click', () => {
             passwordModal.classList.remove('hidden');
             counterContent.classList.add('hidden');
+            passwordStatus.textContent = '';
         });
 
         passwordSubmit.addEventListener('click', async () => {
@@ -548,10 +446,11 @@
             }
         });
 
-        // Başlangıç ayarları
+        // ---------- Başlangıç ----------
         window.onload = function() {
             resizeCanvas();
             createStars();
+            animateStarfield();
             createPuzzle();
             showScreen(welcomeScreen);
             setupFirebase();
