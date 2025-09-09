@@ -151,10 +151,10 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import {
-            getFirestore, doc, getDoc, updateDoc, increment, setDoc,
+            getFirestore, doc, getDoc, updateDoc, increment, setDoc, onSnapshot,
             collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+        
         // ---------- Vars ----------
         let app = null, db = null, auth = null;
         const correctPassword = '4779';
@@ -336,17 +336,14 @@
         // ---------- Firebase (setup / log / gösterme) ----------
         async function setupFirebase() {
             try {
-                // Ortam tarafından sağlanan Firebase config ve token'ı kullan
                 const firebaseConfig = JSON.parse(__firebase_config);
                 app = initializeApp(firebaseConfig);
                 
-                // analytics opsiyonel
                 try { getAnalytics(app); } catch(e) { /* analytics hata verirse yok say */ }
 
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                // onAuthStateChanged dinleyicisini auth nesnesi oluşturulduktan sonra ekle
                 onAuthStateChanged(auth, async (user) => {
                     if (user && !hasLoggedWelcome) {
                         await logVisit('welcome');
@@ -354,7 +351,6 @@
                     }
                 });
 
-                // Ortam tarafından sağlanan token ile giriş yap
                 if (typeof __initial_auth_token !== 'undefined') {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -365,58 +361,49 @@
                 console.error("Firebase kurulumu veya giriş hatası:", error);
             }
         }
-
-        // Basit, okunması kolay yollar: visit_counter/<page> ve visit_logs/*
+        
         async function logVisit(page) {
-            // Sadece db mevcutsa logla
             if (!db) {
                 console.error("Veritabanı bağlantısı henüz kurulmadı. Ziyaretçi kaydı atlanıyor.");
                 return;
             }
+            
             const counterDocRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, page);
             const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
 
             try {
-                const docSnap = await getDoc(counterDocRef);
-                if (docSnap.exists()) {
-                    await updateDoc(counterDocRef, { count: increment(1) });
-                } else {
-                    await setDoc(counterDocRef, { count: 1 });
-                }
-
+                // Veritabanında artış yapmak için atomik bir işlem kullan
+                await setDoc(counterDocRef, { count: increment(1) }, { merge: true });
                 await addDoc(logCollectionRef, { page: page, timestamp: serverTimestamp() });
             } catch (error) {
                 console.error("Sayaç veya kayıt hatası:", error);
             }
         }
 
-        async function updateAndDisplayLogs() {
-            // db nesnesinin mevcut olduğundan emin ol
-            if (!db) {
-                passwordStatus.textContent = "Veriler yükleniyor, lütfen bekleyin...";
-                setTimeout(updateAndDisplayLogs, 500); // Yarım saniye sonra tekrar dene
-                return;
-            }
-            try {
-                const welcomeRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "welcome");
-                const puzzleRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "puzzle");
-                const messageRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "message");
+        function setupLiveListeners() {
+            if (!db) return;
 
-                const [welcomeSnap, puzzleSnap, messageSnap] = await Promise.all([
-                    getDoc(welcomeRef), getDoc(puzzleRef), getDoc(messageRef)
-                ]);
+            // Ziyaretçi sayılarını canlı olarak dinle
+            const welcomeRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "welcome");
+            onSnapshot(welcomeRef, (docSnap) => {
+                welcomeCountElement.textContent = docSnap.exists() ? docSnap.data().count : '0';
+            });
+            const puzzleRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "puzzle");
+            onSnapshot(puzzleRef, (docSnap) => {
+                puzzleCountElement.textContent = docSnap.exists() ? docSnap.data().count : '0';
+            });
+            const messageRef = doc(db, `artifacts/${appId}/public/data/visit_counter`, "message");
+            onSnapshot(messageRef, (docSnap) => {
+                messageCountElement.textContent = docSnap.exists() ? docSnap.data().count : '0';
+            });
 
-                welcomeCountElement.textContent = welcomeSnap.exists() ? welcomeSnap.data().count : '0';
-                puzzleCountElement.textContent = puzzleSnap.exists() ? puzzleSnap.data().count : '0';
-                messageCountElement.textContent = messageSnap.exists() ? messageSnap.data().count : '0';
-
-                const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
-                const q = query(logCollectionRef, orderBy("timestamp", "desc"), limit(10));
-                const logSnap = await getDocs(q);
-
+            // Log kayıtlarını canlı olarak dinle
+            const logCollectionRef = collection(db, `artifacts/${appId}/public/data/visit_logs`);
+            const q = query(logCollectionRef, orderBy("timestamp", "desc"), limit(10));
+            onSnapshot(q, (snapshot) => {
                 logDisplay.innerHTML = '';
-                if (!logSnap.empty) {
-                    logSnap.forEach((d) => {
+                if (!snapshot.empty) {
+                    snapshot.forEach((d) => {
                         const data = d.data();
                         const timestamp = data.timestamp ? data.timestamp.toDate() : null;
                         const page = data.page || 'Bilinmiyor';
@@ -429,9 +416,7 @@
                 } else {
                     logDisplay.innerHTML = '<p class="text-white/50 italic">Kayıt bulunamadı.</p>';
                 }
-            } catch (err) {
-                console.error("updateAndDisplayLogs hatası:", err);
-            }
+            });
         }
 
         // ---------- Modal ve şifre kontrolü ----------
@@ -446,7 +431,6 @@
             if (enteredPassword === correctPassword) {
                 passwordStatus.textContent = '';
                 passwordInput.value = '';
-                await updateAndDisplayLogs();
                 counterContent.classList.remove('hidden');
             } else {
                 passwordStatus.textContent = 'Yanlış şifre!';
@@ -461,7 +445,7 @@
             animateStarfield();
             createPuzzle();
             showScreen(welcomeScreen);
-            setupFirebase();
+            setupFirebase().then(setupLiveListeners);
         };
     </script>
 </body>
